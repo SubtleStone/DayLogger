@@ -1,0 +1,40 @@
+General
+   !!! Checklists
+        id (auto-generated)
+
+
+Finance
+
+    transactions
+
+        id (auto-generated)
+        amount
+        timestamp(Show current time by default AND an additional option for user to input data time manually)
+        category(expenditure/income)
+        tags(need/want/ or stock/investment/salary)
+        note(description of the transaction)
+        balance_snapshot
+
+Academics
+
+    Session
+        subject
+        topic
+        purpose/significance
+        duration
+        remarks
+        timestamp(auto on UI side AND an option for manual input)
+
+    Milestone/Goals
+        goal_name
+        description
+        target_hours(expected number of hours for achieving the milestone)
+        reminder datetime
+
+
+
+
+FUTURE IMPLEMENTATIONS 
+
+    Milestone/Goals
+        An option to add checklist for sub tasks perhaps
