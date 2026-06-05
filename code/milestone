@@ -1,6 +1,0 @@
-import sqlite3
-def add_goal(goal_name, description, target_hours):
-    conn = sqlite3.connect("..\db\data.db")
-    cursor = conn.cursor()
-    query = """
-    INSERT INTO milestone

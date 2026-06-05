@@ -7,4 +7,3 @@ def new_session(subject, topic, context, duration, remarks, timestamp):
     INSERT INTO session(subject, topic, context, duration, remarks, timestamp)
     VALUES (?, ?, ?, ?, ?, ?)
     """
-S

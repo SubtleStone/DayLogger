@@ -1,0 +1,8 @@
+
+git add.
+stages the new changes made 
+
+git commit -m "message" 
+saves the snapshot locally with a message explaining what i changed
+
+git push origin main
