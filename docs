@@ -3,4 +3,5 @@ Status board:
 The project now does basic text input and out to from and the sqlite database.
 
 Fix board:
+Implement all the functions
 Fix the text UI 

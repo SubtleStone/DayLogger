@@ -2,11 +2,12 @@ import sqlite3
 import finance
 import milestone
 import session
+width = 60 #line width for the separators
 print("Welcome Back")
 while True:
-    choice = input("Enter the name of the module you want to access (finance, exit)\n")
+    choice = input(f"Type the name of the module you want access from the selection below.\n{('=' * width)}\n1. finance\n2. milestone\n3. session\n4. exit\n")
     if choice == "finance":
-        choice = input("What action do you want to perform? (log, display)\n")
+        choice = input(f"\nWhat action do you want to perform?\n{('='*width)}\n1. Log transaction(log)\n2. List transaction(display)\n3. Edit transaction(edit)\n4. Remove transaction(remove)\n")
         if choice == "log":
             print("Logging Selected...")
             log = input("What do you want to log?   (income, expenditure)\n")
@@ -26,9 +27,15 @@ while True:
                 finance.transaction_log_add(amount,timestamp,category,tags,note)
         elif choice == "display":    
             print("Finance display module selected...")
-            choice = input("What do you wish to see? (balance,)")
+            choice = input("What do you wish to see? (balance, transactions)")
             if choice == "balance":
                 finance.get_current_balance()
+            elif choice == "transactions":
+                    finance.get_transaction_history()
+        elif choice == "edit":
+            pass
+        elif choice == "remove":
+            pass    
     elif choice == "milestone":
         choice = input("Pick a module (new, view)")
         if choice == "new":

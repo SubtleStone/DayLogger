@@ -1,4 +1,7 @@
 import sqlite3
+import pandas as pd
+width = 60
+
 def transaction_log_add(val1, val2, val3, val4, val5):
     conn = sqlite3.connect("..\db\data.db")
     cursor = conn.cursor()
@@ -30,6 +33,20 @@ def get_current_balance():
 
     conn.close()
     print("Your balance is ", user_balance)
+
+
+def get_transaction_history():
+    category = input(f"Please enter the transaction type.\n Income\n Expenditure\n{('='*width)}\n")
+    conn = sqlite3.connect("..\db\data.db")
+    cursor = conn.cursor()
+    query = f"SELECT transaction_id, amount, timestamp, tags, note  FROM transactions WHERE category = '{category}'"  
+    cursor.execute(query)
+    all_transactions = cursor.fetchall()
+
+    df = pd.DataFrame(all_transactions, columns = ['id', 'amount', 'timestamp', 'tags', 'note'])
+    print(df)
+    conn.close()
+    
 
 
     
