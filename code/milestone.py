@@ -2,23 +2,25 @@ import sqlite3
 
 def milestone_handler():
     action = input("Pick a module (new, view)")
-            match action:
-            case "new":
-                    milestone_new_record_entry()
-            case "view":
-                    milestone_view_records()                
+    match action:
+        case "new":
+                milestone_new_record_entry()
+        case "view":
+                milestone_view_records()   
+        case "edit":
+                milestone_edit_handler()             
 
 def  milestone_new_record_entry():
     goal_name = input("enter goal name/title")
-                    description = input("enter the description for this goal")
-                    target_hours = input("enter an approximation of the number of hours required to achieve the goal")
-                    add_goal(goal_name, description, target_hours)
+    description = input("enter the description for this goal")
+    target_hours = input("enter an approximation of the number of hours required to achieve the goal")
+    add_goal(goal_name, description, target_hours)
 
 def milestone_view_records():
     view_goal()
 
 def add_goal(val1, val2, val3):
-    conn = sqlite3.connect("..\db\data.db")
+    conn = sqlite3.connect(r"..\db\data.db")
     cursor = conn.cursor()
     query = """
     INSERT INTO milestone(goal_name, description, target_hours)
@@ -31,7 +33,7 @@ def add_goal(val1, val2, val3):
     print("Returning to main menu....")
 
 def view_goal():
-    conn = sqlite3.connect("..\db\data.db")
+    conn = sqlite3.connect(r"..\db\data.db")
     cursor = conn.cursor()
     query = """
     SELECT milestone_id, goal_name, description, target_hours FROM milestone
@@ -50,3 +52,43 @@ def view_goal():
     conn.close()
     print("records fetched succesfully!!!")
     print("Returning to main menu....")
+
+def milestone_edit_handler():
+    mid = input("enter the record id (milestone_id) of the row you want to edit")
+    milestone_edit_action_selection(mid)
+
+def milestone_edit_action_selection(mid):
+    choice = input("Choose which field do you wish to change\n")
+    match choice:
+        case "goal_name":
+            edit_goal_name(mid)
+        case "description":
+            edit_description(mid)
+    
+    
+    
+def edit_goal_name(mid):
+    gname = input("enter the replacement goal name")
+    conn = sqlite3.connect(r"..\db\data.db")
+    cursor = conn.cursor()
+    query = """
+    ALTER milestone
+    goal_name= ?
+    WHERE milestone_id = ?
+    """
+    cursor.execute(query,(gname, mid))
+    print("Goal name modified sucessfully")
+
+
+
+def edit_description(mid):
+    des = input("enter the replacement description")
+    conn = sqlite3.connect(r"..\db\data.db ")
+    cursor = conn.cursor()
+    query = """
+    ALTER milestone
+    description =  ?
+    WHERE milestone_id = ?
+    """
+    cursor.execute(query, (des, mid))
+
