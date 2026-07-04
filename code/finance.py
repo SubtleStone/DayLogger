@@ -2,59 +2,14 @@
 
 import sqlite3
 import pandas as pd
-
+from textual.screen import Screen
+from textual.app import ComposeResult
+from textual.widgets import Header, Footer, Button, Label, Input
 
 
 #Database Path
 path = r"..\db\data.db"
 
-def finance_handler():
-    choice = input(f"\nWhat action do you want to perform?\n{('='*width)}\n1. Log transaction(log)\n2. List transaction(display)\n3. Edit transaction(edit)\n4. Remove transaction(remove)\n")
-    match choice:
-                case "log":
-                    finance_log_input_selection()
-                case "display":    
-                    finance_display_input_selection()
-                case "edit":
-                    finance_edit_transaction_handler()
-                case "remove":
-                    pass    
-
-def finance_log_input_selection():
-    print("Logging Selected...")
-    log = input("What do you want to log?   (income, expenditure)\n")
-    match log:
-                        case "income":
-                            finance_log_input_selection_income()
-                        case "expenditure":
-                            finance_log_input_selection_expenditure()
-
-def finance_log_input_selection_income():
-    print("loading income entry module...")
-    amount = input("Enter the amount\n")
-    timestamp = input("Enter the Date and Time\n")
-    category = "income"
-    tags = input("Enter any relevant tags regarding the income source\n")
-    note = input("Any description for the transaction\n")
-    transaction_log_add(amount,timestamp,category,tags,note)
-
-
-def finance_log_input_selection_expenditure():
-    amount = input("Enter the amount\n")
-    timestamp = input("Enter the Date and Time\n")
-    category = "expenditure"
-    tags = input("Enter any relevant tags regarding the expenditure(Need or Want)\n")
-    note = input("Any description for the transaction\n")
-    transaction_log_add(amount,timestamp,category,tags,note)
-
-def finance_display_input_selection():
-    print("Finance display module selected...")
-    choice = input("What do you wish to see? (balance, transactions)")
-    match choice:
-        case "balance":
-            finance_display_input_selection_balance()
-        case "transactions":
-            finance_display_input_selection_transactions()
 
 def finance_display_input_selection_balance():
     print("Fetching Balance...")
@@ -76,24 +31,32 @@ def transaction_log_add(val1, val2, val3, val4, val5):
     print("transaction recorded sucessfully")
     print("returning to main menu....")
 
-def get_current_balance():
+def get_current_balance() -> float:
     conn = sqlite3.connect(path)
     cursor = conn.cursor()
-    query = "SELECT amount, category FROM transactions"
+
+    query = """
+    SELECT
+        COALESCE(SUM(CASE WHEN LOWER(category) = 'income' THEN amount ELSE 0 END), 0) - 
+        COALESCE(SUM(CASE WHEN LOWER(category) = 'expenditure' THEN amount ELSE 0 END), 0)
+    AS current_balance FROM transactions;
+    """
+    
     cursor.execute(query)
-    all_transactions = cursor.fetchall()
-    user_balance = 0
+    # all_transactions = cursor.fetchall()
+    # user_balance = 0
 
-    for transaction in all_transactions:
-        amount =  transaction[0]
-        category = transaction[1]
-        if category.lower() == "income":
-            user_balance += amount
-        else: 
-            user_balance -= amount
-
+    # for transaction in all_transactions:
+    #     amount =  transaction[0]
+    #     category = transaction[1]
+    #     if category.lower() == "income":
+    #         user_balance += amount
+    #     else: 
+    #         user_balance -= amount
+    user_balance = cursor.fetchone()
     conn.close()
-    print("Your balance is ", user_balance)
+
+    return float(user_balance[0] if user_balance else 0.0)
 
 
 def get_transaction_history():
@@ -177,3 +140,233 @@ def edit_note(nt, tid):
     conn.close()
     print("Notes modified successfully!")
     """
+
+
+
+
+
+class FinanceMenu(Screen):
+    """Sub menu screen for handling finance  match cases"""
+
+    def compose(self) -> ComposeResult:
+        yield Header()
+        yield Label("Financial Management Sub-Menu")
+
+        #Mapping CLI to button
+        yield Button("Log Transaction", id="fin_log")
+        yield Button("List Transaction", id="fin_display")
+        yield Button("Edit Transaction", id="fin_edit")
+        yield Button("Remove Transaction", id="fin_remove", variant="warning")
+
+        yield Button("Go Back", id = "fin_back")
+        yield Footer()
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+
+        button_id = event.button.id or ""
+        button_id = button_id.strip()
+
+        if not event.button.id:
+            return
+        
+        match button_id:
+            case "fin_log":
+                self.notify("Logging Module activated")
+                self.app.push_screen(FinanceLog())
+            case "fin_display":
+                self.notify("Display Module activated")
+            case "fin_edit":
+                self.notify("Edit Module activated")
+            case "fin_back":
+                self.dismiss()
+                event.stop() #this stops the false unknown button action trigger below from firing
+            case "fin_remove":
+                self.notify("Remove module triggered!")
+            case "":
+                pass
+            case _:
+                self.notify("unknown button action please select again")
+
+
+    # def finance_handler():
+    #     choice = input(f"\nWhat action do you want to perform?\n\n1. Log transaction(log)\n2. List transaction(display)\n3. Edit transaction(edit)\n4. Remove transaction(remove)\n")
+    #     match choice:
+    #                 case "log":
+    #                     finance_log_input_selection()
+    #                 case "display":    
+    #                     finance_display_input_selection()
+    #                 case "edit":
+    #                     finance_edit_transaction_handler()
+    #                 case "remove":
+    #                     pass    
+
+class FinanceLog(Screen):
+        def compose(self) -> ComposeResult:
+            yield Header()
+            yield Label("Is the transaction an income or an expense?")
+            yield Button("Income", id="btn_income")
+            yield Button("Expense", id="btn_expense")
+            yield Button("Go Back", id="btn_previous")
+
+            yield Footer()
+
+        def on_button_pressed(self, event: Button.Pressed) -> None:
+
+            button_id = event.button.id or ""
+            button_id = button_id.strip()
+
+            match button_id:
+                case "btn_income":
+                    self.app.push_screen(IncomeInputScreen())
+                case "btn_expense":
+                    self.app.push_screen(ExpenseInputScreen())
+                case "btn_previous":
+                    self.dismiss()
+                    event.stop()
+                    pass
+                case _:
+                    self.notify("Invalid button event")
+                
+
+            
+class IncomeInputScreen(Screen):
+    def compose(self)->ComposeResult:
+        yield Header()
+        yield Label("---INCOME LOG---")
+
+        yield Label("Amount")
+        yield Input(placeholder="eg. = 1500.00", id = "inp_amount")
+
+        yield Label("Date and Time")
+        yield Input(placeholder="YYYY-MM-DD HH:MM", id="inp_timestamp")
+
+        yield Label("Tags")
+        yield Input(placeholder="eg. = salary, freelance, gift", id="inp_tags")
+
+        yield Label("Description / Note:")
+        yield Input(placeholder="where/whom did this  money come from", id="inp_note")
+
+        yield Button("Submit Transaction", id="btn_submit", variant="success")
+        yield Button("Cancel", id="btn_cancel", variant="error")
+        yield Footer()
+
+    def on_button_pressed(self, event: Button.Pressed)->None:
+        button_id=(event.button.id or "").strip()
+
+        match button_id:
+            case "btn_submit":
+                amount_val = self.query_one("#inp_amount", Input).value
+                timestamp_val = self.query_one("#inp_timestamp", Input).value
+                tags_val = self.query_one("#inp_tags", Input).value
+                note_val = self.query_one(
+                    "#inp_note", Input
+                ).value
+                
+                category_val = "income"
+                
+                if not amount_val:
+                    self.notify("Amount cannot be empty!", variant = "error")
+                    return
+                
+                try:
+                    transaction_log_add(amount_val, timestamp_val, category_val, tags_val, note_val)
+                    self.notify("Income logged successfully!")
+
+                    self.dismiss()
+                    event.stop()
+                except Exception as e:
+                    self.notify(f"Database Error: {str(e)}", severity="error")
+
+            case "btn_cancel":
+                self.dismiss()
+                event.stop()
+
+            case _:
+                self.notify("Invalid option.")
+
+
+class ExpenseInputScreen(Screen):
+    def compose(self)->ComposeResult:
+        yield Header()
+        yield Label("Expense Log")
+        yield Label("Amount:")
+        yield Input(placeholder = "e.g. 1523.00", id="inp_amount")
+        yield Label("Date and Time:")
+        yield Input(placeholder = "YYYY-MM-DD HH:MM", id="inp_timestamp")
+        yield Label("Tags")
+        yield Input(placeholder = "eg. emi, loan payment, electricity bill, etc", id = "inp_tags")
+        yield Label("Description / Note :")
+        yield Input(placeholder = "Where/Whom did the money go to and brief description", id = "inp_note")
+
+        yield Button("Submit Transaction", id="btn_submit", variant = "success")
+        yield Button("Cancel", id = "btn_cancel", variant = "error")
+        yield Footer()
+
+    def on_button_pressed(self, event : Button.Pressed) -> None:
+        button_id = (event.button.id or "").strip()
+        match button_id:
+            case "btn_submit":
+                amount_val = self.query_one("#inp_amount", Input).value
+                timestamp_val = self.query_one("#inp_timestamp", Input).value
+                tags_val = self.query_one("#inp_tags", Input).value
+                note_val = self.query_one("#inp_note", Input).value
+                category_val = "expense"
+
+                if not amount_val: 
+                    self.notify("amount cannot be empty!", variant = "error")
+                    return
+
+                try: 
+                    transaction_log_add(amount_val, timestamp_val, category_val, tags_val, note_val)
+                    self.notify("Expense Logged Successfully")
+
+                    self.dismiss()
+                    event.stop()
+                except Exception as e:
+                    self.notify("Database error {str(e)}", severity = "error")
+
+            case "btn_cancel":
+                self.dismiss()
+                event.stop()
+
+            case _:
+                self.notify("Invalid Option")
+
+
+    # def finance_log_input_selection():
+    #     print("Logging Selected...")
+    #     log = input("What do you want to log?   (income, expenditure)\n")
+    #     match log:
+    #                         case "income":
+    #                             finance_log_input_selection_income()
+    #                         case "expenditure":
+    #                             finance_log_input_selection_expenditure()
+
+    # def finance_log_input_selection_income():
+    #     print("loading income entry module...")
+    #     amount = input("Enter the amount\n")
+    #     timestamp = input("Enter the Date and Time\n")
+    #     category = "income"
+    #     tags = input("Enter any relevant tags regarding the income source\n")
+    #     note = input("Any description for the transaction\n")
+    #     transaction_log_add(amount,timestamp,category,tags,note)
+
+
+    # def finance_log_input_selection_expenditure():
+    #     amount = input("Enter the amount\n")
+    #     timestamp = input("Enter the Date and Time\n")
+    #     category = "expenditure"
+    #     tags = input("Enter any relevant tags regarding the expenditure(Need or Want)\n")
+    #     note = input("Any description for the transaction\n")
+    #     transaction_log_add(amount,timestamp,category,tags,note)
+
+    # def finance_display_input_selection():
+    #     print("Finance display module selected...")
+    #     choice = input("What do you wish to see? (balance, transactions)")
+    #     match choice:
+    #         case "balance":
+    #             finance_display_input_selection_balance()
+    #         case "transactions":
+    #             finance_display_input_selection_transactions()
+
+    

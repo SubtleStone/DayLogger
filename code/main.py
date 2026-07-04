@@ -3,10 +3,10 @@
 from textual.app import App, ComposeResult
 from textual.widgets import Header, Footer, Button, Label
 import sqlite3
-import finance
 import milestone
 import session
 
+from finance import FinanceMenu
 
 class MainMenu(App):
     """textual app with match cases mapped via buttons/clicks"""
@@ -53,20 +53,29 @@ class MainMenu(App):
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """ Handles all the button click events and describes the subsequent actions"""
+        button_id = event.button.id or ""
+        button_id = button_id.strip()
+        if not button_id:
+            return
 
         #button id value maps to the match case 
-        match event.button.id:
+        match button_id:
+    
             case "btn_finance":
-                finance.finance_handler()
-                self.notify("Returning to main menu...")
+                #finance.finance_handler()
+                self.push_screen(FinanceMenu())
             case "btn_milestone":
-                milestone.milestone_handler()
-                # self.notify("")
+                #milestone.milestone_handler()
+                self.notify("Milestones underwork!")
             case "btn_academics":
-                pass
+                self.notify("Academics coming soon")
             case "btn_session":
                 session.session_handler()
-                # self.notify("")
+                self.notify("Sessions underwork!")
+            case "btn_exit":
+                self.exit()
+            case "":
+                pass
             case _:
                 self.notify("Unknown button action! Please enter a valid input")
 
