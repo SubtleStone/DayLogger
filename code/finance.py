@@ -4,7 +4,8 @@ import sqlite3
 import pandas as pd
 from textual.screen import Screen
 from textual.app import ComposeResult
-from textual.widgets import Header, Footer, Button, Label, Input
+from textual.containers import Horizontal, Vertical
+from textual.widgets import Header, Footer, Button, Label, Input, DataTable
 
 
 #Database Path
@@ -60,15 +61,19 @@ def get_current_balance() -> float:
 
 
 def get_transaction_history():
-    category = input(f"Please enter the transaction type.\n Income\n Expenditure\n{('='*width)}\n")
+    #category = input(f"Please enter the transaction type.\n Income\n Expenditure\n{('='*width)}\n")
     conn = sqlite3.connect(path)
     cursor = conn.cursor()
-    query = f"SELECT transaction_id, amount, timestamp, tags, note  FROM transactions WHERE category = '{category}'"  
+    query = """SELECT transaction_id, category, amount, tags, note, timestamp  
+    FROM transactions
+    ORDER BY timestamp DESC
+    LIMIT 100;
+    """  
     cursor.execute(query)
     all_transactions = cursor.fetchall()
 
-    df = pd.DataFrame(all_transactions, columns = ['id', 'amount', 'timestamp', 'tags', 'note'])
-    print(df)
+    #df = pd.DataFrame(all_transactions, columns = ['id', 'amount', 'timestamp', 'tags', 'note'])
+    return all_transactions
     conn.close()
     
 
@@ -147,19 +152,89 @@ def edit_note(nt, tid):
 
 class FinanceMenu(Screen):
     """Sub menu screen for handling finance  match cases"""
+    CSS = """
+    #navbar {
+        layout: horizontal;
+        height: 3;
+        background: #2c3e50;
+        margin-bottom: 1;
+    }
+    #navbar Button{
+        width: auto;
+        height: 100%;
+        margin-right: 2;
+        border: none;
 
+    }
+
+    #main_content{
+        padding:  1 2;
+        background: #1e1e1e;
+    }
+
+    #lbl_balance {
+       # font-size: 1;
+        margin-bottom: 2;
+    }
+    """
     def compose(self) -> ComposeResult:
         yield Header()
-        yield Label("Financial Management Sub-Menu")
+        with Horizontal(id="navbar"):
+           #yield Label("Financial Management Sub-Menu")
+            yield Button("Log Transaction", id="fin_log")
+            # yield Button("List Transaction", id="fin_display")
+            # yield Button("Edit Transaction", id="fin_edit")
+            # yield Button("Remove Transaction", id="fin_remove", variant="warning")
+            yield Button("Go Back", id = "fin_back")
 
-        #Mapping CLI to button
-        yield Button("Log Transaction", id="fin_log")
-        yield Button("List Transaction", id="fin_display")
-        yield Button("Edit Transaction", id="fin_edit")
-        yield Button("Remove Transaction", id="fin_remove", variant="warning")
+        with Vertical(id="main_content"):
+                yield Label("Current balance", id="lbl_balance")
+                yield DataTable(id="history_table", cursor_type = "row")
 
-        yield Button("Go Back", id = "fin_back")
+
         yield Footer()
+     
+    def on_mount(self)->None:
+        try: 
+            balance = get_current_balance()
+            if balance > 0:
+                status_text = f"Your balance is : {balance}"
+            else:
+                status_text = f"Your balance is : {balance}"
+            self.query_one("#lbl_balance", Label).update(status_text)
+
+        except Exception as e:
+            self.query_one("#lbl_balance", Label).update(f"[red]Encounter error : {e}[/red]")
+
+        table = self.query_one("#history_table", DataTable)
+        #transaction_id, category, amount, tags, note, timestamp
+        table.add_columns("ID", "Type", "Amount", "Tags", "Notes","Date/Time") 
+
+        try:
+            db_rows = get_transaction_history()
+
+            for row in db_rows:
+                tx_id, type, amount, tag, note, datetime = row
+
+                if type.lower() == "income":
+                    colored_amount = f"[green]+${amount:,.2f}[/green]"
+                else:
+                    colored_amount = f"[red]-${amount:,.2f}[/red]"
+
+                table.add_row(
+                    str(tx_id),
+                    str(type),
+                    colored_amount,
+                    str(tag),
+                    str(note),
+                    str(datetime)
+        )
+
+        except Exception as e:
+            self.notify(f"Error: failed  to load the table :{e}", severity = "error")
+
+
+
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
 
@@ -174,19 +249,20 @@ class FinanceMenu(Screen):
                 self.notify("Logging Module activated")
                 self.app.push_screen(FinanceLog())
             case "fin_display":
-                self.notify("Display Module activated")
+                self.notify("Apologies Display Module is yet to be implemented!")
             case "fin_edit":
-                self.notify("Edit Module activated")
+                self.notify("Apologies Edit module will be implemented soon")
             case "fin_back":
                 self.dismiss()
                 event.stop() #this stops the false unknown button action trigger below from firing
             case "fin_remove":
-                self.notify("Remove module triggered!")
+                self.notify("Apologies Remove module hasn't been implemented yet")
             case "":
                 pass
             case _:
                 self.notify("unknown button action please select again")
 
+   
 
     # def finance_handler():
     #     choice = input(f"\nWhat action do you want to perform?\n\n1. Log transaction(log)\n2. List transaction(display)\n3. Edit transaction(edit)\n4. Remove transaction(remove)\n")

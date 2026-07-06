@@ -31,3 +31,13 @@ Fix board:
 
 
 
+
+
+
+
+
+NEXT IN LINE:
+
+Fix the css of the finance dashboard, implement the table below the navbar and balance.
+Implement other functionalities such as add, edit, remove using in page pop ups
+Find out why the ghost event fires in finance module while accessing edit, remove but the same doesnt on the main menu page, even though the match case code is the same.
